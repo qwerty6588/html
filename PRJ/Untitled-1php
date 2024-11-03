@@ -1,0 +1,7 @@
+<?php
+
+$num1=7;
+$num2=7;
+print "Result:" . ($num1 * $num2);
+
+?>
