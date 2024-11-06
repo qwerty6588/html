@@ -1,9 +1,14 @@
-<html>
-<body>
+<?php
+$servername = "localhost";
+$username = "username";
+$password = "password";
 
-Welcome <?php echo $_POST["name"]; ?><br>
-Your email address is: <?php echo $_POST["email"]; ?>
+// Create connection
+$conn = new mysqli($servername, $username, $password);
 
-test project added here.
-</body>
-</html>
+// Check connection
+if ($conn->connect_error) {
+die("Connection failed: " . $conn->connect_error);
+}
+echo "Connected successfully";
+?>
