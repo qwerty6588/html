@@ -5,6 +5,7 @@ namespace Class\Database;
 use Exception;
 use PDO;
 use PDOException;
+use PDOStatement;
 
 class Database
 {
@@ -16,6 +17,17 @@ class Database
     private string $charset = "utf8mb4";
 
 
+    protected string $table;
+    protected PDO $conn;
+    protected PDOStatement $stmt;
+    protected string $query;
+
+    public function __construct()
+    {
+        $this->conn = $this->connection();
+    }
+
+
     /**
      * connection to database
      * @return PDO|null
@@ -25,7 +37,7 @@ class Database
         try {
             $conn = new PDO("mysql:host=$this->host;dbname=$this->database", $this->username, $this->password);
             $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            echo "Connected successfully";
+            echo "Connected successfully \n";
             return $conn;
         } catch(PDOException $e) {
             echo "Connection failed: " . $e->getMessage();
@@ -35,24 +47,60 @@ class Database
         return null;
     }
 
-
     /**
-     * Select
-     * @param string $query
-     * @return bool|array
+     * @param string $table
+     * @param array $columns
+     * @return Database
      */
-    public function select(string $query): bool|array
+    public function select(string $table, array $columns = []): Database
     {
-        $conn = $this->connection();
-        $stmt = $conn->prepare($query);
-        $stmt->execute();
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        return $stmt->fetchAll();
+        $select = empty($columns) ? "*" : implode(", ", $columns);
+        $this->query = "SELECT " . $select . " FROM " . $table;
+        return $this;
     }
 
-    public function insert(){}
+    public function where(array $where = [], array $condition = []): static
+    {
+        if (empty($where)) {
+            return $this;
+        }
+        if (isset($where[0][0]) && is_array($where[0])){
+            foreach ($where as $key => $value) {
+                if ($key == 0) {
+                    $this->query .= ' WHERE '. implode(' ', $value);
+                } else {
+                    $this->query .= (empty($condition) ? ' AND ' : ' ' . $condition[$key] . ' ') . implode(' ', $value);
+                }
+            }
+        } else {
+            $this->query .= ' WHERE ' . implode(' ', $where);
+        }
+        return $this;
+    }
 
-    public function update(){}
+    public function get()
+    {
+        $this->stmt = $this->conn->prepare($this->query);
+        $this->stmt->execute();
+        $this->stmt->setFetchMode(PDO::FETCH_ASSOC);
+        return $this->stmt->fetchAll();
+    }
 
-    public function delete(){}
+    public function insert(string $query)
+    {
+        $conn = $this->connection();
+        $conn->exec($query);
+    }
+
+    public function update(string $query)
+    {
+        $conn = $this->connection();
+        $conn->exec($query);
+    }
+
+    public function delete(string $query)
+    {
+        $conn = $this->connection();
+        $conn->exec($query);
+    }
 }
